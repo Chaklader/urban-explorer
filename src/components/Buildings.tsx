@@ -52,7 +52,12 @@ export default function Buildings({ count = 20, area = 60 }: BuildingsProps) {
 
                 return (
                     <RigidBody key={building.id} type="fixed" colliders="cuboid">
-                        <Box position={building.position} args={building.args}>
+                        <Box
+                            castShadow // Buildings should cast shadows
+                            receiveShadow // Buildings can receive shadows
+                            position={building.position}
+                            args={building.args}
+                        >
                             {/* Apply the texture */} 
                             <meshStandardMaterial map={buildingTexture} />
                             {/* <meshStandardMaterial color={new THREE.Color(Math.random() * 0xffffff)} /> */}
