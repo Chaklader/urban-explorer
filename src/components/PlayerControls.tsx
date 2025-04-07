@@ -3,17 +3,24 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useRef, useEffect } from 'react';
 import { Vector3, Euler, MathUtils } from 'three';
 import { RigidBody, CapsuleCollider, RapierRigidBody } from '@react-three/rapier';
+import usePlayerStore from '../stores/playerStore';
 
 interface PlayerControlsProps {
     speed?: number;
     sprintSpeed?: number;
+    boundarySize?: number;
 }
 
-export default function PlayerControls({ speed = 5, sprintSpeed = 10 }: PlayerControlsProps) {
+export default function PlayerControls({ 
+    speed = 5, 
+    sprintSpeed = 10,
+    boundarySize = 50 
+}: PlayerControlsProps) {
     const { camera, gl } = useThree();
     const [_, get] = useKeyboardControls<string>();
     const playerRef = useRef<RapierRigidBody>(null);
     const currentMoveSpeed = useRef(speed);
+    const setPosition = usePlayerStore(state => state.setPosition);
 
     const isDragging = useRef(false);
     const mouseDelta = useRef({ x: 0, y: 0 });
@@ -75,6 +82,8 @@ export default function PlayerControls({ speed = 5, sprintSpeed = 10 }: PlayerCo
         }
 
         camera.position.set(playerPosition.x, playerPosition.y + 0.6, playerPosition.z);
+        // Update player position in store
+        setPosition([playerPosition.x, playerPosition.y, playerPosition.z]);
 
         const { forward, backward, left, right, sprint } = get();
         currentMoveSpeed.current = sprint ? sprintSpeed : speed;
@@ -90,7 +99,25 @@ export default function PlayerControls({ speed = 5, sprintSpeed = 10 }: PlayerCo
             .applyEuler(camera.rotation);
 
         const currentLinvel = playerRef.current.linvel();
-        playerRef.current.setLinvel({ x: direction.x, y: currentLinvel.y, z: direction.z }, true);
+        
+        // Calculate the new position
+        const halfBoundary = boundarySize / 2;
+        const newX = playerPosition.x + direction.x;
+        const newZ = playerPosition.z + direction.z;
+        
+        // Apply boundary restrictions
+        const clampedX = MathUtils.clamp(newX, -halfBoundary, halfBoundary);
+        const clampedZ = MathUtils.clamp(newZ, -halfBoundary, halfBoundary);
+        
+        // Only apply velocity if within boundaries
+        if (clampedX !== newX || clampedZ !== newZ) {
+            // Block movement in the direction of the boundary
+            const velX = clampedX !== newX ? 0 : direction.x;
+            const velZ = clampedZ !== newZ ? 0 : direction.z;
+            playerRef.current.setLinvel({ x: velX, y: currentLinvel.y, z: velZ }, true);
+        } else {
+            playerRef.current.setLinvel({ x: direction.x, y: currentLinvel.y, z: direction.z }, true);
+        }
     });
 
     return (

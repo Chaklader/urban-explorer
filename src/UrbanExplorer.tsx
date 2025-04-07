@@ -5,6 +5,7 @@ import { Physics } from '@react-three/rapier';
 import PlayerControls from './components/PlayerControls';
 import Ground from './components/Ground';
 import Buildings from './components/Buildings';
+import PositionLogger from './components/PositionLogger';
 
 type KeyMap = { name: string; keys: string[] }[];
 
@@ -15,6 +16,8 @@ const keyMap: KeyMap = [
     { name: 'right', keys: ['ArrowRight', 'KeyD'] },
     { name: 'sprint', keys: ['Shift'] },
 ];
+
+const BOUNDARY_SIZE = 100;
 
 export default function UrbanExplorer() {
     return (
@@ -47,12 +50,14 @@ export default function UrbanExplorer() {
                 <Environment preset="city" />
                 {/* Physics world setup */}
                 <Physics gravity={[0, -9.81, 0]}>
-                    {/* Player controls component */}
-                    <PlayerControls speed={20} sprintSpeed={40} />
+                    {/* Player controls component with boundary settings */}
+                    <PlayerControls speed={20} sprintSpeed={40} boundarySize={BOUNDARY_SIZE} />
                     <Ground />
-                    <Buildings count={30} area={80} />
-                    {/* Placeholder for ground and buildings (Step 3) */}
+                    <Buildings count={30} area={BOUNDARY_SIZE} />
                 </Physics>
+
+                {/* Add PositionLogger for debugging */}
+                <PositionLogger />
             </Canvas>
         </KeyboardControls>
     );
